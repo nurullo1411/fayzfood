@@ -79,6 +79,7 @@ export async function checkout(cart, opts = {}) {
     given: opts.given || finalTotal,
     customer_id: opts.customer_id || null,
     courier_id: opts.courier_id || null,
+    address: opts.address || null,
     created_by: opts.created_by || null,
   };
   await db.put('orders', order);

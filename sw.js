@@ -2,7 +2,7 @@
 // sw.js — Service Worker (offline rejim)
 // Ilova fayllarini keshlaydi — internet bo'lmasa ham ochiladi.
 // ============================================================
-const CACHE = 'fayzfood-v2';
+const CACHE = 'fayzfood-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -21,6 +21,8 @@ const ASSETS = [
   './js/screens/expenses.js',
   './js/screens/reports.js',
   './js/screens/settings.js',
+  './js/screens/courier.js',
+  './js/screens/delivery.js',
 ];
 
 self.addEventListener('install', (e) => {

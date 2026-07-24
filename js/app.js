@@ -15,6 +15,7 @@ import { renderExpenses } from './screens/expenses.js';
 import { renderReports } from './screens/reports.js';
 import { renderSettings } from './screens/settings.js';
 import { renderCourier } from './screens/courier.js';
+import { renderDelivery } from './screens/delivery.js';
 
 const SCREENS = {
   kassa:     { label: 'Kassa',    icon: '🧾', render: renderKassa },
@@ -22,7 +23,7 @@ const SCREENS = {
   warehouse: { label: 'Ombor',    icon: '📦', render: renderWarehouse },
   expenses:  { label: 'Xarajat',  icon: '💸', render: renderExpenses },
   reports:   { label: 'Hisobot',  icon: '📊', render: renderReports },
-  delivery:  { label: 'Dostavka', icon: '🛵', render: (c) => c.innerHTML = '<div class="empty-screen">🛵<p>Dostavka moduli 2-bosqichda qo\'shiladi</p></div>' },
+  delivery:  { label: 'Dostavka', icon: '🛵', render: renderDelivery },
   courier:   { label: 'Buyurtmalar', icon: '🛵', render: renderCourier },
   settings:  { label: 'Sozlama',  icon: '⚙️', render: renderSettings },
 };

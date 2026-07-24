@@ -72,6 +72,8 @@ input,select{font-family:inherit;}
 .order-types{display:flex;gap:6px;padding:12px;border-bottom:1px solid var(--line);}
 .otype{flex:1;padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;}
 .otype.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+.address-box{display:flex;flex-direction:column;gap:8px;padding:0 12px 12px;}
+.address-box .fld-input{padding:10px;font-size:14px;}
 .cart-list{flex:1;overflow-y:auto;padding:8px 12px;}
 .cart-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:4px;}
 .cart-empty-ic{font-size:40px;opacity:.5;}

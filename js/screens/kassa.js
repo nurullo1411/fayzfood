@@ -11,6 +11,8 @@ import { el, $, money, toast } from '../util.js';
 let cart = [];
 let activeCat = 'all';
 let orderType = 'dine_in';
+let deliveryAddress = '';
+let deliveryFee = 0;
 
 export async function renderKassa(root) {
   cart = [];
@@ -53,9 +55,20 @@ export async function renderKassa(root) {
   [['dine_in','🍽️ Zal'],['takeaway','🥡 Olib ketish'],['delivery','🛵 Dostavka']].forEach(([t, lbl]) => {
     typeRow.appendChild(el('button', {
       class: 'otype' + (orderType === t ? ' active' : ''),
-      onClick: (e) => { orderType = t; [...typeRow.children].forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }
+      onClick: (e) => {
+        orderType = t;
+        [...typeRow.children].forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        addressBox.hidden = t !== 'delivery';
+        renderCart();
+      }
     }, lbl));
   });
+  const addressI = el('input', { class: 'fld-input', value: deliveryAddress, placeholder: 'Yetkazish manzili' });
+  const feeI = el('input', { class: 'fld-input', type: 'number', value: deliveryFee || '', placeholder: 'Yetkazish narxi (ixtiyoriy)' });
+  addressI.addEventListener('input', () => deliveryAddress = addressI.value);
+  feeI.addEventListener('input', () => { deliveryFee = +feeI.value || 0; renderCart(); });
+  const addressBox = el('div', { class: 'address-box', ...(orderType !== 'delivery' ? { hidden: 'true' } : {}) }, [addressI, feeI]);
   const cartList = el('div', { class: 'cart-list' });
   const grandTotal = el('span', {}, money(0));
   const payBtn = el('button', { class: 'pay-btn', disabled: 'true', onClick: openPay }, "To'lov");
@@ -64,10 +77,14 @@ export async function renderKassa(root) {
     payBtn,
   ]);
   cartPane.appendChild(typeRow);
+  cartPane.appendChild(addressBox);
   cartPane.appendChild(cartList);
   cartPane.appendChild(summary);
 
-  function total() { return cart.reduce((s, i) => s + i.product.price * i.qty, 0); }
+  function total() {
+    const cartSum = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
+    return orderType === 'delivery' ? cartSum + deliveryFee : cartSum;
+  }
   function add(p) { const ex = cart.find(i => i.product.id === p.id); if (ex) ex.qty++; else cart.push({ product: p, qty: 1 }); renderCart(); }
   function chg(id, d) { const it = cart.find(i => i.product.id === id); if (!it) return; it.qty += d; if (it.qty <= 0) cart = cart.filter(i => i.product.id !== id); renderCart(); }
   function renderCart() {
@@ -97,6 +114,7 @@ export async function renderKassa(root) {
   // To'lov oynasi
   function openPay() {
     if (cart.length === 0) return;
+    if (orderType === 'delivery' && !deliveryAddress.trim()) { toast('Yetkazish manzilini kiriting', 'error'); return; }
     let method = 'cash';
     const sum = total();
 
@@ -137,11 +155,15 @@ export async function renderKassa(root) {
     if (method === 'cash' && given < sum) { toast('Summa yetmaydi', 'error'); return; }
     const order = await checkout(cart, {
       type: orderType, payment_method: method, given, created_by: state.user.id,
+      address: orderType === 'delivery' ? deliveryAddress.trim() : null,
+      delivery_fee: orderType === 'delivery' ? deliveryFee : 0,
     });
     bg.remove();
     const typeName = { dine_in: 'Zal', takeaway: 'Olib ketish', delivery: 'Dostavka' }[orderType];
     toast(`✅ Buyurtma #${order.order_no} yopildi (${typeName})`);
     cart = [];
+    deliveryAddress = ''; deliveryFee = 0;
+    addressI.value = ''; feeI.value = '';
     renderCart();
   }
 
