@@ -4,6 +4,7 @@
 // ============================================================
 import * as db from './db.js';
 import { isoToDayKey, isoToMonthKey, todayKey, monthKey } from './util.js';
+import { INGREDIENTS_SEED } from './seed.js';
 
 // --- Taom tannarxini retsept bo'yicha hisoblash ---
 export async function productCost(productId) {
@@ -109,16 +110,48 @@ export async function stockIn(ingredientId, qty, costPerUnit, note = '', created
   ing.avg_cost = newQty > 0 ? ((oldQty * oldCost) + (qty * costPerUnit)) / newQty : costPerUnit;
   ing.stock_qty = newQty;
   await db.put('ingredients', ing);
+  const moveId = db.uuid();
   await db.put('stock_movements', {
-    id: db.uuid(), ingredient_id: ingredientId, type: 'in',
+    id: moveId, ingredient_id: ingredientId, type: 'in',
     qty: qty, cost: costPerUnit, order_id: null, note: note || 'Kirim',
   });
   await db.put('expenses', {
     id: db.uuid(), category: 'supplies', amount: qty * costPerUnit,
     note: 'Ombor kirim: ' + ing.name + (note ? ' — ' + note : ''),
-    created_by: createdBy,
+    created_by: createdBy, stock_movement_id: moveId,
   });
   return ing;
+}
+
+// --- Ombor: qo'lda kiritilgan harakatni bekor qilish (xato kirim/chiqim uchun) ---
+// Sotuvdan (out_sale) qolgan harakatni bu yerdan o'chirib bo'lmaydi — u buyurtmaga bog'liq.
+export async function deleteStockMovement(movementId) {
+  const move = await db.get('stock_movements', movementId);
+  if (!move || move.type === 'out_sale') return;
+  const ing = await db.get('ingredients', move.ingredient_id);
+  if (ing) {
+    ing.stock_qty = Math.max(0, (ing.stock_qty || 0) - move.qty);
+    await db.put('ingredients', ing);
+  }
+  await db.remove('stock_movements', movementId);
+  if (move.type === 'in') {
+    const linked = await db.where('expenses', e => e.stock_movement_id === movementId);
+    for (const e of linked) await db.remove('expenses', e.id);
+  }
+}
+
+// --- Sinov ma'lumotlarini tozalash: barcha savdo/ombor harakati/xarajat o'chiriladi, ---
+// ombor qoldig'i boshlang'ich (seed) holatga qaytariladi. Taomlar/xodimlar/narxlar tegilmaydi.
+export async function resetTestData() {
+  for (const store of ['orders', 'order_items', 'stock_movements', 'expenses']) {
+    const rows = await db.getAll(store);
+    for (const r of rows) await db.remove(store, r.id);
+  }
+  for (const seedIng of INGREDIENTS_SEED) {
+    const cur = await db.get('ingredients', seedIng.id);
+    if (cur) await db.put('ingredients', { ...cur, stock_qty: seedIng.stock_qty, avg_cost: seedIng.avg_cost });
+  }
+  _lastNo = null; // buyurtma raqamlash ham 1 dan qayta boshlansin
 }
 
 // --- Ombor: qo'lda chiqim (buzildi/yo'qoldi) ---

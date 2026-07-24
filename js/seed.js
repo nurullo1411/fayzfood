@@ -4,6 +4,22 @@
 // ============================================================
 import { openDB, getAll, put, get } from './db.js';
 
+// Boshlang'ich ombor qoldig'i — seedIfEmpty() va repo.js'dagi resetTestData() ikkisi ham shundan foydalanadi
+export const INGREDIENTS_SEED = [
+  { id: 'i-lavash-non', name: 'Lavash noni',   unit: 'dona', stock_qty: 100, min_qty: 20, avg_cost: 2000 },
+  { id: 'i-bulka',      name: 'Bulka (non)',    unit: 'dona', stock_qty: 80,  min_qty: 20, avg_cost: 2500 },
+  { id: 'i-tovuq',      name: "Tovuq go'shti",  unit: 'kg',   stock_qty: 15,  min_qty: 3,  avg_cost: 45000 },
+  { id: 'i-mol',        name: "Mol go'shti",    unit: 'kg',   stock_qty: 12,  min_qty: 3,  avg_cost: 75000 },
+  { id: 'i-pishloq',    name: 'Pishloq',        unit: 'kg',   stock_qty: 5,   min_qty: 1,  avg_cost: 60000 },
+  { id: 'i-kartoshka',  name: 'Kartoshka fri',  unit: 'kg',   stock_qty: 20,  min_qty: 5,  avg_cost: 18000 },
+  { id: 'i-sous',       name: 'Souslar',        unit: 'litr', stock_qty: 8,   min_qty: 2,  avg_cost: 25000 },
+  { id: 'i-sabzavot',   name: 'Sabzavot',       unit: 'kg',   stock_qty: 10,  min_qty: 2,  avg_cost: 12000 },
+  { id: 'i-sosiska',    name: 'Sosiska',        unit: 'dona', stock_qty: 60,  min_qty: 15, avg_cost: 4000 },
+  { id: 'i-cola',       name: 'Cola 0.5',       unit: 'dona', stock_qty: 50,  min_qty: 12, avg_cost: 5000 },
+  { id: 'i-suv',        name: 'Suv 0.5',        unit: 'dona', stock_qty: 60,  min_qty: 12, avg_cost: 2000 },
+  { id: 'i-ayron',      name: 'Ayron',          unit: 'dona', stock_qty: 40,  min_qty: 10, avg_cost: 4000 },
+];
+
 export async function seedIfEmpty() {
   await openDB();
   const users = await getAll('users');
@@ -32,21 +48,7 @@ export async function seedIfEmpty() {
   for (const c of cats) await put('categories', c);
 
   // --- Ingredientlar (ombor) --- avg_cost = 1 birlik narxi (so'm)
-  const ings = [
-    { id: 'i-lavash-non', name: 'Lavash noni',   unit: 'dona', stock_qty: 100, min_qty: 20, avg_cost: 2000 },
-    { id: 'i-bulka',      name: 'Bulka (non)',    unit: 'dona', stock_qty: 80,  min_qty: 20, avg_cost: 2500 },
-    { id: 'i-tovuq',      name: "Tovuq go'shti",  unit: 'kg',   stock_qty: 15,  min_qty: 3,  avg_cost: 45000 },
-    { id: 'i-mol',        name: "Mol go'shti",    unit: 'kg',   stock_qty: 12,  min_qty: 3,  avg_cost: 75000 },
-    { id: 'i-pishloq',    name: 'Pishloq',        unit: 'kg',   stock_qty: 5,   min_qty: 1,  avg_cost: 60000 },
-    { id: 'i-kartoshka',  name: 'Kartoshka fri',  unit: 'kg',   stock_qty: 20,  min_qty: 5,  avg_cost: 18000 },
-    { id: 'i-sous',       name: 'Souslar',        unit: 'litr', stock_qty: 8,   min_qty: 2,  avg_cost: 25000 },
-    { id: 'i-sabzavot',   name: 'Sabzavot',       unit: 'kg',   stock_qty: 10,  min_qty: 2,  avg_cost: 12000 },
-    { id: 'i-sosiska',    name: 'Sosiska',        unit: 'dona', stock_qty: 60,  min_qty: 15, avg_cost: 4000 },
-    { id: 'i-cola',       name: 'Cola 0.5',       unit: 'dona', stock_qty: 50,  min_qty: 12, avg_cost: 5000 },
-    { id: 'i-suv',        name: 'Suv 0.5',        unit: 'dona', stock_qty: 60,  min_qty: 12, avg_cost: 2000 },
-    { id: 'i-ayron',      name: 'Ayron',          unit: 'dona', stock_qty: 40,  min_qty: 10, avg_cost: 4000 },
-  ];
-  for (const i of ings) await put('ingredients', i);
+  for (const i of INGREDIENTS_SEED) await put('ingredients', i);
 
   // --- Taomlar ---
   const prods = [

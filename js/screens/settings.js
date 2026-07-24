@@ -3,7 +3,7 @@
 // Brending (logo+nom), xodim/kuryer boshqaruvi, Telegram.
 // ============================================================
 import * as db from '../db.js';
-import { getSetting, setSetting } from '../repo.js';
+import { getSetting, setSetting, resetTestData } from '../repo.js';
 import { el, $, toast, confirmBox } from '../util.js';
 
 const EMOJIS = ['🍔','🍕','🌯','🍗','🍟','🌭','🥙','🍱','☕','🥤','🔥','⭐'];
@@ -72,6 +72,19 @@ export async function renderSettings(root) {
     el('label', { class: 'fld-label' }, 'Chat ID'), tgI,
     el('button', { class: 'btn-confirm wide', onClick: async () => { await setSetting('telegram_chat_id', tgI.value.trim()); toast('💾 Saqlandi'); } }, '💾 Saqlash'),
   ]));
+
+  // === Ma'lumotlarni tozalash ===
+  root.appendChild(section('🧹 Ma\'lumotlar', [
+    el('p', { class: 'hint' }, 'Sinov uchun kiritilgan barcha savdo, ombor kirim/chiqim va xarajatlarni o\'chiradi. Ombor qoldig\'i boshlang\'ich holatga qaytadi. Taomlar, narxlar, xodimlar va kuryerlar o\'zgarmaydi.'),
+    el('button', { class: 'btn-delete wide', onClick: doReset }, '🧹 Sinov ma\'lumotlarini tozalash'),
+  ]));
+
+  async function doReset() {
+    if (!await confirmBox('DIQQAT: barcha savdo tarixi, ombor harakatlari va xarajatlar butunlay o\'chiriladi. Bu amalni ortga qaytarib bo\'lmaydi. Davom etamizmi?')) return;
+    await resetTestData();
+    toast('🧹 Tozalandi');
+    setTimeout(() => location.reload(), 700);
+  }
 }
 
 async function renderStaff(root) {

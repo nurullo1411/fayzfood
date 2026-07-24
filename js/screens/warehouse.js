@@ -3,9 +3,9 @@
 // Ingredient qoldig'i, kirim, qo'lda chiqim, kam qolganda ogohlantirish.
 // ============================================================
 import * as db from '../db.js';
-import { stockIn, stockWaste } from '../repo.js';
+import { stockIn, stockWaste, deleteStockMovement } from '../repo.js';
 import { state } from '../state.js';
-import { el, $, money, toast, dateStr, timeStr } from '../util.js';
+import { el, $, money, toast, dateStr, timeStr, confirmBox } from '../util.js';
 
 export async function renderWarehouse(root) {
   root.innerHTML = '';
@@ -121,6 +121,7 @@ export async function renderWarehouse(root) {
       el('span', {}, TYPE[m.type] || m.type),
       el('span', { class: m.qty >= 0 ? 'pos' : 'neg' }, `${m.qty >= 0 ? '+' : ''}${fmtQty(m.qty)} ${ing.unit}`),
       el('span', { class: 'hist-date' }, `${dateStr(m.created_at)} ${timeStr(m.created_at)}`),
+      m.type === 'out_sale' ? null : el('button', { class: 'hist-del', title: 'Xato yozuvni o\'chirish', onClick: () => delMove(m) }, '🗑'),
     ])) : [el('div', { class: 'empty-mini' }, 'Harakatlar yo\'q')];
 
     const modal = el('div', { class: 'modal scroll' }, [
@@ -131,6 +132,14 @@ export async function renderWarehouse(root) {
     ]);
     const bg = el('div', { class: 'modal-bg' }, modal);
     document.body.appendChild(bg);
+
+    async function delMove(m) {
+      if (!await confirmBox('Bu yozuv o\'chirilsin va ombor qoldig\'i tuzatilsinmi?')) return;
+      await deleteStockMovement(m.id);
+      bg.remove();
+      toast('🗑 O\'chirildi');
+      renderWarehouse(root);
+    }
   }
 }
 
