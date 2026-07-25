@@ -34,9 +34,6 @@ export async function renderReports(root) {
   // foyda taqsimoti
   root.appendChild(el('div', { class: 'mini-stats' }, [
     miniStat('Buyurtmalar', sum.count + ' ta'),
-    miniStat('Tannarx', money(sum.cost)),
-    miniStat('Yalpi foyda', money(sum.grossProfit)),
-    miniStat('Rasxod', money(sum.expenses)),
   ]));
 
   // to'lov turi
