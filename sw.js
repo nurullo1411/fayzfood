@@ -2,7 +2,7 @@
 // sw.js — Service Worker (offline rejim)
 // Ilova fayllarini keshlaydi — internet bo'lmasa ham ochiladi.
 // ============================================================
-const CACHE = 'fayzfood-v7';
+const CACHE = 'fayzfood-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const ASSETS = [
   './js/app.js',
   './js/db.js',
   './js/seed.js',
+  './js/migrations.js',
   './js/util.js',
   './js/repo.js',
   './js/state.js',

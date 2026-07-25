@@ -3,6 +3,7 @@
 // ============================================================
 import { openDB } from './db.js';
 import { seedIfEmpty } from './seed.js';
+import { runMigrations } from './migrations.js';
 import { loadSession, logout, state, allowedScreens, canAccess } from './state.js';
 import { getSetting } from './repo.js';
 import { $, el, timeStr } from './util.js';
@@ -119,6 +120,7 @@ export async function start() {
 async function boot() {
   await openDB();
   await seedIfEmpty();
+  await runMigrations();
   loadSession();
   await start();
 
