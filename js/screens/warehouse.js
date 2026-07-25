@@ -118,9 +118,11 @@ export async function renderWarehouse(root) {
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).slice(0, 50);
     const TYPE = { in: '➕ Kirim', out_sale: '🧾 Sotuv', out_waste: '➖ Chiqim', inventory: '📋 Tuzatish' };
     const rows = moves.length ? moves.map(m => el('div', { class: 'hist-row' }, [
-      el('span', {}, TYPE[m.type] || m.type),
-      el('span', { class: m.qty >= 0 ? 'pos' : 'neg' }, `${m.qty >= 0 ? '+' : ''}${fmtQty(m.qty)} ${ing.unit}`),
-      el('span', { class: 'hist-date' }, `${dateStr(m.created_at)} ${timeStr(m.created_at)}`),
+      el('div', { class: 'hist-info' }, [
+        el('span', {}, TYPE[m.type] || m.type),
+        el('span', { class: m.qty >= 0 ? 'pos' : 'neg' }, `${m.qty >= 0 ? '+' : ''}${fmtQty(m.qty)} ${ing.unit}`),
+        el('span', { class: 'hist-date' }, `${dateStr(m.created_at)} ${timeStr(m.created_at)}`),
+      ]),
       m.type === 'out_sale' ? null : el('button', { class: 'hist-del', title: 'Xato yozuvni o\'chirish', onClick: () => delMove(m) }, '🗑'),
     ])) : [el('div', { class: 'empty-mini' }, 'Harakatlar yo\'q')];
 
