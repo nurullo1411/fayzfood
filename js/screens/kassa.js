@@ -124,7 +124,7 @@ export async function renderKassa(root) {
       el('label', { class: 'fld-label' }, 'Mijoz bergan summa'), givenInput, changeRow,
       el('div', { class: 'quick-cash' }, quickCashButtons(sum, givenInput, changeRow)),
     ]);
-    const clickBox = el('div', { class: 'click-box', hidden: 'true', html: '📱 Click orqali to\'lov so\'rovi yuboriladi.<br><small>(2-bosqichda Click API ulanadi)</small>' });
+    const clickBox = el('div', { class: 'click-box', hidden: 'true', html: `📱 Mijoz Click ilovasi orqali <b>${money(sum)}</b> to'lov qildi.<br><small>Tasdiqlashdan oldin summa haqiqatan tushganini tekshiring.</small>` });
 
     givenInput.addEventListener('input', () => updateChange(givenInput, changeRow, sum));
 
