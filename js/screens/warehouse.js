@@ -27,7 +27,7 @@ const catOf = ing => ing.category || LEGACY_CAT[ing.id] || CATS[0].id;
 export async function renderWarehouse(root) {
   root.innerHTML = '';
   const ings = (await db.getAll('ingredients')).sort((a, b) => a.name.localeCompare(b.name));
-  const low = ings.filter(i => (i.stock_qty || 0) <= (i.min_qty || 0));
+  const low = ings.filter(i => (i.min_qty || 0) > 0 && (i.stock_qty || 0) <= i.min_qty);
 
   const header = el('div', { class: 'screen-head' }, [
     el('h2', {}, '📦 Ombor'),
@@ -46,7 +46,7 @@ export async function renderWarehouse(root) {
     root.appendChild(el('div', { class: 'panel-title', style: 'margin:14px 16px 8px' }, `${cat.icon} ${cat.label}`));
     const list = el('div', { class: 'stock-list' });
     items.forEach(i => {
-      const isLow = (i.stock_qty || 0) <= (i.min_qty || 0);
+      const isLow = (i.min_qty || 0) > 0 && (i.stock_qty || 0) <= i.min_qty;
       const ratio = i.min_qty > 0 ? Math.min(1, (i.stock_qty || 0) / (i.min_qty * 3)) : 1;
       const color = isLow ? 'var(--red)' : ratio < 0.5 ? 'var(--yellow)' : 'var(--green)';
       list.appendChild(el('div', { class: 'stock-row' }, [
@@ -88,10 +88,15 @@ export async function renderWarehouse(root) {
     async function save() {
       const qty = +qtyI.value;
       if (!qty || qty <= 0) { toast('Miqdor kiriting', 'error'); return; }
-      if (kind === 'in') await stockIn(ing.id, qty, +costI.value || ing.avg_cost, noteI.value, state.user.id);
-      else await stockWaste(ing.id, qty, noteI.value);
+      if (kind === 'in') {
+        await stockIn(ing.id, qty, +costI.value || ing.avg_cost, noteI.value, state.user.id);
+        toast('➕ Kirim qo\'shildi');
+      } else {
+        const overshoot = qty > (ing.stock_qty || 0);
+        await stockWaste(ing.id, qty, noteI.value);
+        toast(overshoot ? '⚠️ Kiritilgan miqdor qoldiqdan ko\'p edi — qoldiq 0 ga tushirildi' : '➖ Chiqim yozildi', overshoot ? 'error' : 'success');
+      }
       bg.remove();
-      toast(kind === 'in' ? '➕ Kirim qo\'shildi' : '➖ Chiqim yozildi');
       renderWarehouse(root);
     }
   }

@@ -155,14 +155,18 @@ export async function resetTestData() {
 }
 
 // --- Ombor: qo'lda chiqim (buzildi/yo'qoldi) ---
+// Tarixga haqiqatda ayirilgan miqdor yoziladi (qoldiqdan ortiq chiqim kiritilsa, 0 gacha kesiladi) —
+// aks holda keyin shu yozuvni o'chirilsa (deleteStockMovement) qoldiqqa ortiqcha miqdor qaytib qo'shilib ketardi.
 export async function stockWaste(ingredientId, qty, note = '') {
   const ing = await db.get('ingredients', ingredientId);
   if (!ing) return;
-  ing.stock_qty = Math.max(0, (ing.stock_qty || 0) - qty);
+  const oldQty = ing.stock_qty || 0;
+  const actualQty = Math.min(qty, oldQty);
+  ing.stock_qty = oldQty - actualQty;
   await db.put('ingredients', ing);
   await db.put('stock_movements', {
     id: db.uuid(), ingredient_id: ingredientId, type: 'out_waste',
-    qty: -qty, cost: 0, order_id: null, note: note || 'Chiqim',
+    qty: -actualQty, cost: 0, order_id: null, note: note || 'Chiqim',
   });
   return ing;
 }
@@ -170,7 +174,7 @@ export async function stockWaste(ingredientId, qty, note = '') {
 // --- Kam qolgan ingredientlar ---
 export async function lowStock() {
   const ings = await db.getAll('ingredients');
-  return ings.filter(i => (i.stock_qty || 0) <= (i.min_qty || 0));
+  return ings.filter(i => (i.min_qty || 0) > 0 && (i.stock_qty || 0) <= i.min_qty);
 }
 
 // --- Hisobot: sana oralig'idagi savdo statistikasi ---
