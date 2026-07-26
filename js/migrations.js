@@ -85,6 +85,17 @@ async function replaceFoodMenu() {
   }
 }
 
+// Ichimliklarga haqiqiy tannarx/sotish narxini qo'yadi (Kiosk Hisob ma'lumotlaridan).
+// Sotish narxi 0 bo'lganlar (hali sotib olinmagan/sotilmayotgan) "to'xtatilgan" holatda qoladi.
+async function setDrinkPrices(prices) {
+  for (const [name, cost, price] of prices) {
+    const ing = await db.get('ingredients', 'i-' + slug(name));
+    if (ing) { ing.avg_cost = cost; await db.put('ingredients', ing); }
+    const prod = await db.get('products', 'p-' + slug(name));
+    if (prod) { prod.price = price; prod.is_available = price > 0; await db.put('products', prod); }
+  }
+}
+
 const MIGRATIONS = [
   {
     id: 1,
@@ -107,6 +118,27 @@ const MIGRATIONS = [
     ]),
   },
   { id: 2, run: replaceFoodMenu },
+  {
+    id: 3,
+    // [nom, tannarx, sotish narxi]
+    run: () => setDrinkPrices([
+      ['Kola 0.5', 5900, 8000], ['Kola 1.0', 9200, 12000], ['Kola 1.5', 12500, 15000], ['Kola 2.0', 0, 0],
+      ['Fanta 0.5', 5900, 8000], ['Fanta 1.0', 9200, 12000], ['Fanta 1.5', 12500, 15000], ['Fanta 2.0', 0, 0],
+      ['Sprite 0.5', 5900, 8000], ['Sprite 1.0', 9200, 12000], ['Sprite 1.5', 12500, 15000],
+      ['Shisha fanta', 3000, 5000], ['Shisha kola', 3000, 5000],
+      ['Fanta balnichni', 0, 0], ['Kola balnichni', 0, 0],
+      ['Adrenalin kotta', 14000, 17000], ['Adrenalin kichkina', 0, 0],
+      ['Flesh rus', 11700, 15000], ['Flesh uzb', 9400, 13000],
+      ['Gorilla', 10300, 13000], ['Ananas', 0, 0], ['Moxito', 10300, 13000], ['Royal', 5000, 8000], ['Sok', 0, 0],
+      ['Dinay 1.0', 10500, 12000], ['Dinay 0.5', 7000, 8000],
+      ['Garden kotta', 0, 0], ['Garden kichkina', 0, 0],
+      ['Arktea kotta', 8700, 12000], ['Arktea kichkina', 5200, 6000],
+      ['Fyus tea 0.5', 5900, 8000], ['Fyus tea 1.0', 9200, 12000],
+      ['Bonaqua 0.5', 2550, 4000], ['Bonaqua 1.0', 0, 0], ['Bonaqua 1.5', 0, 0],
+      ['Pepsi 0.5', 6100, 8000], ['Pepsi 1.0', 9500, 12000], ['Pepsi 1.5', 13000, 15000], ['Pepsi 1.75', 0, 0], ['Pepsi 2.0', 16500, 20000],
+      ['Gidrolayf 0.5', 0, 0], ['Gidrolayf 1.0', 0, 0], ['Gidrolayf 1.5', 0, 0],
+    ]),
+  },
 ];
 
 export async function runMigrations() {
