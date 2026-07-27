@@ -233,6 +233,15 @@ select.fld-input{appearance:none;}
 .top-qty{color:var(--muted);font-size:13px;}
 .top-sum{font-weight:600;}
 .low-q{color:#ff8787;font-size:13px;}
+.hist-order-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+.hist-order-row:last-child{border-bottom:none;}
+.hist-order-row.voided{opacity:.55;}
+.ho-info{flex:1;min-width:0;}
+.ho-top{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;}
+.ho-no{color:var(--brand2);}
+.ho-voided{font-size:11px;color:#ff8787;font-weight:700;}
+.ho-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.ho-void-btn{flex-shrink:0;padding:8px 10px;border-radius:10px;border:1px solid var(--red);background:rgba(224,49,49,.1);color:#ff8787;font-size:12px;font-weight:600;cursor:pointer;}
 .report-note{margin:0 16px 90px;padding:12px;background:rgba(77,171,247,.08);border-radius:10px;font-size:12px;color:var(--blue);}
 
 /* ---------- Sozlamalar ---------- */

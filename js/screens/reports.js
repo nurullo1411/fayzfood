@@ -2,9 +2,9 @@
 // reports.js — Hisobot / Dashboard (faqat Egasi)
 // Tushum, xarajat, foyda, top taomlar, to'lov turi taqsimoti.
 // ============================================================
-import { salesSummary, topProducts } from '../repo.js';
+import { salesSummary, topProducts, orderHistory, voidOrder } from '../repo.js';
 import { lowStock } from '../repo.js';
-import { el, $, money } from '../util.js';
+import { el, $, money, toast, confirmBox, dateStr, timeStr } from '../util.js';
 
 let period = 'today';
 
@@ -13,6 +13,7 @@ export async function renderReports(root) {
   const sum = await salesSummary(period);
   const top = await topProducts(period, 7);
   const low = await lowStock();
+  const history = await orderHistory(period, 30);
 
   root.appendChild(el('div', { class: 'screen-head' }, [el('h2', {}, '📊 Hisobot')]));
 
@@ -54,6 +55,33 @@ export async function renderReports(root) {
     el('span', { class: 'top-sum' }, money(t.sum)),
   ])));
   root.appendChild(topPanel);
+
+  // so'nggi buyurtmalar (xato buyurtmani bekor qilish uchun)
+  const TYPE_LABEL = { dine_in: 'Zal', takeaway: 'Olib ketish', delivery: 'Dostavka' };
+  const histPanel = el('div', { class: 'panel' }, [el('div', { class: 'panel-title' }, '🧾 So\'nggi buyurtmalar')]);
+  if (history.length === 0) histPanel.appendChild(el('div', { class: 'empty-mini' }, 'Bu davrda buyurtma yo\'q'));
+  history.forEach(o => {
+    const voided = o.payment_status === 'voided';
+    histPanel.appendChild(el('div', { class: 'hist-order-row' + (voided ? ' voided' : '') }, [
+      el('div', { class: 'ho-info' }, [
+        el('div', { class: 'ho-top' }, [
+          el('span', { class: 'ho-no' }, '#' + o.order_no),
+          el('span', {}, TYPE_LABEL[o.type] || o.type),
+          voided ? el('span', { class: 'ho-voided' }, 'BEKOR QILINGAN') : null,
+        ]),
+        el('div', { class: 'ho-sub' }, `${money(o.total)} · ${o.payment_method === 'cash' ? '💵 Naqd' : '📱 Click'} · ${dateStr(o.created_at)} ${timeStr(o.created_at)}`),
+      ]),
+      voided ? null : el('button', { class: 'ho-void-btn', onClick: () => doVoid(o) }, '🗑 Bekor qilish'),
+    ]));
+  });
+  root.appendChild(histPanel);
+
+  async function doVoid(o) {
+    if (!await confirmBox(`Buyurtma #${o.order_no} (${money(o.total)}) bekor qilinsinmi? Bu amalni ortga qaytarib bo'lmaydi.`)) return;
+    await voidOrder(o.id);
+    toast('🗑 Buyurtma bekor qilindi');
+    renderReports(root);
+  }
 
   // kam qolgan ombor
   if (low.length > 0) {

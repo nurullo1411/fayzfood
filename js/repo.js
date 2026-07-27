@@ -211,6 +211,39 @@ export async function salesSummary(filter = 'today') {
   return { revenue, cost, expenses: exp, grossProfit, netProfit, count, byMethod, orders: filtered };
 }
 
+// --- Buyurtmalar tarixi (bekor qilinganlari ham) — audit va nazorat uchun ---
+export async function orderHistory(filter = 'today', limit = 50) {
+  const orders = await db.getAll('orders');
+  const tKey = todayKey(), mKey = monthKey();
+  return orders
+    .filter(o => {
+      if (filter === 'today') return isoToDayKey(o.created_at) === tKey;
+      if (filter === 'month') return isoToMonthKey(o.created_at) === mKey;
+      return true;
+    })
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+    .slice(0, limit);
+}
+
+// --- Buyurtmani bekor qilish (xato/tasdiqlangan sotuvni tuzatish uchun) ---
+// Ombordan chiqqan ingredientlar (bo'lsa) qaytariladi, buyurtma "voided" belgilanadi —
+// o'chirilmaydi (audit tarixi qoladi), lekin hisobotdagi tushum/xarajatga endi qo'shilmaydi.
+export async function voidOrder(orderId) {
+  const order = await db.get('orders', orderId);
+  if (!order || order.payment_status === 'voided') return;
+  const moves = await db.where('stock_movements', m => m.order_id === orderId && m.type === 'out_sale');
+  for (const m of moves) {
+    const ing = await db.get('ingredients', m.ingredient_id);
+    if (ing) {
+      ing.stock_qty = Math.max(0, (ing.stock_qty || 0) - m.qty); // m.qty manfiy, shu bois ayirish qaytaradi
+      await db.put('ingredients', ing);
+    }
+    await db.remove('stock_movements', m.id);
+  }
+  order.payment_status = 'voided';
+  await db.put('orders', order);
+}
+
 // --- Top sotilgan taomlar ---
 export async function topProducts(filter = 'today', limit = 10) {
   const { orders } = await salesSummary(filter);

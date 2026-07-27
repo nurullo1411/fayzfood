@@ -73,17 +73,53 @@ export async function renderSettings(root) {
     el('button', { class: 'btn-confirm wide', onClick: async () => { await setSetting('telegram_chat_id', tgI.value.trim()); toast('💾 Saqlandi'); } }, '💾 Saqlash'),
   ]));
 
+  // === Zaxira nusxa ===
+  root.appendChild(section('💾 Zaxira nusxa', [
+    el('p', { class: 'hint' }, 'Barcha ma\'lumotlar (savdo, ombor, xarajat, taomlar) shu telefonda saqlanadi. Telefon yo\'qolsa yoki singan bo\'lsa hammasi yo\'qoladi — shu sabab tez-tez (masalan har hafta) zaxira nusxa olib, Telegram/Google Drive kabi joyga saqlab qo\'yishni tavsiya qilamiz.'),
+    el('button', { class: 'btn-confirm wide', onClick: exportBackup }, '💾 Zaxira nusxa yuklab olish'),
+  ]));
+
+  async function exportBackup() {
+    const data = {};
+    for (const store of db.STORES) data[store] = await db.getAll(store, { includeDeleted: true });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = el('a', { href: url, download: `fayzfood-zaxira-${new Date().toISOString().slice(0, 10)}.json` });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('💾 Zaxira nusxa yuklab olindi');
+  }
+
   // === Ma'lumotlarni tozalash ===
   root.appendChild(section('🧹 Ma\'lumotlar', [
     el('p', { class: 'hint' }, 'Sinov uchun kiritilgan barcha savdo, ombor kirim/chiqim va xarajatlarni o\'chiradi. Ombor qoldig\'i boshlang\'ich holatga qaytadi. Taomlar, narxlar, xodimlar va kuryerlar o\'zgarmaydi.'),
+    el('p', { class: 'hint', style: 'color:#ff8787;font-weight:600' }, '⚠️ Haqiqiy ishga tushgandan keyin bu tugmani bosmang — barcha haqiqiy savdo tarixi ham o\'chib ketadi!'),
     el('button', { class: 'btn-delete wide', onClick: doReset }, '🧹 Sinov ma\'lumotlarini tozalash'),
   ]));
 
-  async function doReset() {
-    if (!await confirmBox('DIQQAT: barcha savdo tarixi, ombor harakatlari va xarajatlar butunlay o\'chiriladi. Bu amalni ortga qaytarib bo\'lmaydi. Davom etamizmi?')) return;
-    await resetTestData();
-    toast('🧹 Tozalandi');
-    setTimeout(() => location.reload(), 700);
+  function doReset() {
+    const confirmWord = 'TOZALA';
+    const wordI = el('input', { class: 'fld-input', placeholder: `Tasdiqlash uchun "${confirmWord}" deb yozing` });
+    const confirmBtn = el('button', { class: 'btn-delete', disabled: 'true', onClick: async () => {
+      await resetTestData();
+      bg.remove();
+      toast('🧹 Tozalandi');
+      setTimeout(() => location.reload(), 700);
+    } }, '🧹 Butunlay tozalash');
+    wordI.addEventListener('input', () => { confirmBtn.disabled = wordI.value.trim() !== confirmWord; });
+    const modal = el('div', { class: 'modal' }, [
+      el('h3', {}, '⚠️ Diqqat'),
+      el('p', { class: 'hint' }, 'Barcha savdo tarixi, ombor harakatlari va xarajatlar BUTUNLAY o\'chiriladi. Bu amalni ortga qaytarib bo\'lmaydi.'),
+      el('label', { class: 'fld-label' }, `Davom etish uchun katta harflar bilan "${confirmWord}" deb yozing`), wordI,
+      el('div', { class: 'modal-actions' }, [
+        el('button', { class: 'btn-cancel', onClick: () => bg.remove() }, 'Bekor'),
+        confirmBtn,
+      ]),
+    ]);
+    const bg = el('div', { class: 'modal-bg' }, modal);
+    document.body.appendChild(bg);
   }
 }
 
