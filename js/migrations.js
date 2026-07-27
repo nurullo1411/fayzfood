@@ -96,6 +96,32 @@ async function setDrinkPrices(prices) {
   }
 }
 
+// Har bir mahsulotga qisqa raqamli kod beradi (masalan Beef Box = 11) — kassada tez
+// tanlash va ovozli buyurtmada nom o'rniga raqam aytish uchun ("beef box" o'rniga "o'n bir").
+// Faqat kod hali yo'q mahsulotlarga beriladi, mavjudlarga tegilmaydi.
+async function assignProductCodes() {
+  const cats = (await db.getAll('categories')).sort((a, b) => a.sort_order - b.sort_order);
+  const catOrder = {};
+  cats.forEach((c, i) => catOrder[c.id] = i);
+
+  const products = await db.getAll('products');
+  const withoutCode = products.filter(p => !p.code);
+  if (withoutCode.length === 0) return;
+
+  const maxExisting = products.reduce((m, p) => p.code ? Math.max(m, p.code) : m, 0);
+  withoutCode.sort((a, b) => {
+    const ca = catOrder[a.category_id] ?? 999, cb = catOrder[b.category_id] ?? 999;
+    if (ca !== cb) return ca - cb;
+    return a.name.localeCompare(b.name);
+  });
+
+  let next = maxExisting + 1;
+  for (const p of withoutCode) {
+    await db.put('products', { ...p, code: next });
+    next++;
+  }
+}
+
 const MIGRATIONS = [
   {
     id: 1,
@@ -139,6 +165,7 @@ const MIGRATIONS = [
       ['Gidrolayf 0.5', 0, 0], ['Gidrolayf 1.0', 0, 0], ['Gidrolayf 1.5', 0, 0],
     ]),
   },
+  { id: 4, run: assignProductCodes },
 ];
 
 export async function runMigrations() {

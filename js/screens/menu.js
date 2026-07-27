@@ -12,6 +12,7 @@ export async function renderMenu(root) {
   root.innerHTML = '';
   const cats = (await db.getAll('categories')).sort((a, b) => a.sort_order - b.sort_order);
   const products = await db.getAll('products');
+  const nextCode = products.reduce((m, p) => p.code ? Math.max(m, p.code) : m, 0) + 1;
 
   const header = el('div', { class: 'screen-head' }, [
     el('h2', {}, '🍔 Menyu'),
@@ -30,7 +31,7 @@ export async function renderMenu(root) {
       list.appendChild(el('div', { class: 'prod-row' + (p.is_available ? '' : ' off'), onClick: () => editProduct(p) }, [
         el('div', { class: 'pr-emoji', html: p.emoji || '🍽️' }),
         el('div', { class: 'pr-info' }, [
-          el('div', { class: 'pr-name' }, p.name + (p.is_available ? '' : ' (to\'xtatilgan)')),
+          el('div', { class: 'pr-name' }, (p.code ? `#${p.code} ` : '') + p.name + (p.is_available ? '' : ' (to\'xtatilgan)')),
           el('div', { class: 'pr-sub' }, `Narx: ${money(p.price)} · Tannarx: ${money(cost)} · Foyda: ${money(profit)} (${margin}%)`),
         ]),
         el('div', { class: 'pr-arrow' }, '›'),
@@ -49,6 +50,7 @@ export async function renderMenu(root) {
     let recipe = isNew ? [] : (await db.where('recipes', r => r.product_id === p.id));
 
     const nameI = el('input', { class: 'fld-input', value: p.name, placeholder: 'Taom nomi' });
+    const codeI = el('input', { class: 'fld-input', type: 'number', value: p.code || nextCode, placeholder: 'Kod (masalan 11)' });
     const priceI = el('input', { class: 'fld-input', type: 'number', value: p.price, placeholder: 'Narx' });
     const catSel = el('select', { class: 'fld-input' }, cats.map(c => el('option', { value: c.id, ...(c.id === p.category_id ? { selected: 'true' } : {}) }, c.name)));
     const availSel = el('select', { class: 'fld-input' }, [
@@ -96,6 +98,7 @@ export async function renderMenu(root) {
     const modal = el('div', { class: 'modal scroll' }, [
       el('h3', {}, isNew ? 'Yangi taom' : 'Taomni tahrirlash'),
       el('label', { class: 'fld-label' }, 'Nomi'), nameI,
+      el('label', { class: 'fld-label' }, 'Kod (kassada tez tanlash va ovozli buyurtma uchun)'), codeI,
       el('label', { class: 'fld-label' }, 'Narx (so\'m)'), priceI,
       el('label', { class: 'fld-label' }, 'Kategoriya'), catSel,
       el('label', { class: 'fld-label' }, 'Holati'), availSel,
@@ -112,7 +115,7 @@ export async function renderMenu(root) {
       const name = nameI.value.trim();
       if (!name) { toast('Nom kiriting', 'error'); return; }
       const saved = await db.put('products', {
-        ...prod, name, price: +priceI.value || 0,
+        ...prod, name, price: +priceI.value || 0, code: +codeI.value || null,
         category_id: catSel.value, emoji: chosenEmoji, is_available: availSel.value === '1',
       });
       // Retseptni qayta yozish: eskilarni o'chirib, yangilarini saqlash

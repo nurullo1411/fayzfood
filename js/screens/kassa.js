@@ -39,16 +39,34 @@ export async function renderKassa(root) {
   }
   function renderGrid() {
     grid.innerHTML = '';
-    products.filter(p => activeCat === 'all' || p.category_id === activeCat).forEach(p => {
-      grid.appendChild(el('div', { class: 'card', onClick: () => add(p) }, [
-        el('div', { class: 'emoji', html: p.emoji || '🍽️' }),
-        el('div', { class: 'pname' }, p.name),
-        el('div', { class: 'pprice' }, money(p.price)),
-      ]));
-    });
+    products.filter(p => activeCat === 'all' || p.category_id === activeCat)
+      .sort((a, b) => (a.code || 999) - (b.code || 999))
+      .forEach(p => {
+        grid.appendChild(el('div', { class: 'card', onClick: () => add(p) }, [
+          p.code ? el('div', { class: 'card-code' }, '#' + p.code) : null,
+          el('div', { class: 'emoji', html: p.emoji || '🍽️' }),
+          el('div', { class: 'pname' }, p.name),
+          el('div', { class: 'pprice' }, money(p.price)),
+        ]));
+      });
   }
   const voiceBtn = el('button', { class: 'voice-btn', onClick: startVoiceOrder }, '🎤 Ovozli buyurtma');
+  const codeI = el('input', { class: 'fld-input mini', type: 'number', placeholder: 'Kod (masalan 11)' });
+  const codeAddBtn = el('button', { class: 'code-add-btn', onClick: addByCode }, '➕');
+  codeI.addEventListener('keydown', (e) => { if (e.key === 'Enter') addByCode(); });
+  const codeRow = el('div', { class: 'code-row' }, [codeI, codeAddBtn]);
+  function addByCode() {
+    const code = +codeI.value;
+    if (!code) return;
+    const p = products.find(x => x.code === code);
+    if (!p) { toast('Bu kodda taom topilmadi', 'error'); return; }
+    add(p);
+    toast(`✅ #${code} ${p.name} qo'shildi`);
+    codeI.value = '';
+    codeI.focus();
+  }
   menuPane.appendChild(voiceBtn);
+  menuPane.appendChild(codeRow);
   menuPane.appendChild(catRow);
   menuPane.appendChild(grid);
 

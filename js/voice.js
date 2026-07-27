@@ -18,18 +18,16 @@ const NUM_WORDS = {
   toqqizta: 9, toqqiz: 9, onta: 10, on: 10,
 };
 
+// Faqat SO'Z ko'rinishidagi sonni miqdor sifatida oladi. Raqamlarning o'zi (masalan "11")
+// bu yerda tegilmaydi — ular pastda mahsulot KODI sifatida tekshiriladi, chunki "Kola 1.0" kabi
+// hajm raqamlari bilan chalkashib ketmasligi kerak.
 function extractQty(segment) {
   const words = segment.split(' ');
   for (let i = 0; i < words.length; i++) {
-    const w = words[i];
-    if (/^\d+$/.test(w)) {
+    if (NUM_WORDS[words[i]] !== undefined) {
+      const qty = NUM_WORDS[words[i]];
       words.splice(i, 1);
-      if (words[i] === 'ta' || words[i] === 'dona') words.splice(i, 1);
-      return { qty: +w, rest: words.join(' ').trim() };
-    }
-    if (NUM_WORDS[w] !== undefined) {
-      words.splice(i, 1);
-      return { qty: NUM_WORDS[w], rest: words.join(' ').trim() };
+      return { qty, rest: words.join(' ').trim() };
     }
   }
   return { qty: 1, rest: segment };
@@ -64,6 +62,14 @@ export function parseVoiceOrder(transcript, products) {
   for (const seg of segments) {
     const { qty, rest } = extractQty(seg);
     if (!rest) continue;
+
+    // Mahsulot KODI bo'yicha: segment "so'z sifatidagi miqdor"dan tashqari FAQAT raqamdan iborat bo'lsa
+    // (masalan "11" yoki "ikkita 11" -> qty ajratilgach rest="11"), shu kodli mahsulotni tanlaydi.
+    const digitOnly = rest.replace(/\s+/g, '');
+    if (/^\d+$/.test(digitOnly)) {
+      const byCode = products.find(p => p.code === +digitOnly);
+      if (byCode) { matched.push({ product: byCode, qty }); continue; }
+    }
 
     const candidates = index.filter(entry => {
       if (entry.core.length === 0) return false;
