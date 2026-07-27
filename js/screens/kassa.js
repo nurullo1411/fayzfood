@@ -7,6 +7,7 @@ import * as db from '../db.js';
 import { checkout } from '../repo.js';
 import { state, isOwner } from '../state.js';
 import { el, $, money, toast } from '../util.js';
+import { speechSupported, listenOnce, parseVoiceOrder } from '../voice.js';
 
 let cart = [];
 let activeCat = 'all';
@@ -46,6 +47,8 @@ export async function renderKassa(root) {
       ]));
     });
   }
+  const voiceBtn = el('button', { class: 'voice-btn', onClick: startVoiceOrder }, '🎤 Ovozli buyurtma');
+  menuPane.appendChild(voiceBtn);
   menuPane.appendChild(catRow);
   menuPane.appendChild(grid);
 
@@ -165,6 +168,57 @@ export async function renderKassa(root) {
     deliveryAddress = ''; deliveryFee = 0;
     addressI.value = ''; feeI.value = '';
     renderCart();
+  }
+
+  // --- Ovozli buyurtma ---
+  function startVoiceOrder() {
+    if (!speechSupported()) { toast('Bu qurilma ovozli buyurtmani qo\'llab-quvvatlamaydi', 'error'); return; }
+    voiceBtn.textContent = '🔴 Tinglanmoqda...';
+    voiceBtn.disabled = true;
+    listenOnce(
+      (transcript) => { voiceBtn.textContent = '🎤 Ovozli buyurtma'; voiceBtn.disabled = false; openVoiceReview(transcript); },
+      (err) => {
+        voiceBtn.textContent = '🎤 Ovozli buyurtma'; voiceBtn.disabled = false;
+        const MSG = { 'not-allowed': 'Mikrofonga ruxsat berilmagan', 'no-speech': 'Ovoz eshitilmadi, qayta urinib ko\'ring', unsupported: 'Qo\'llab-quvvatlanmaydi' };
+        toast(MSG[err] || 'Xatolik: ' + err, 'error');
+      }
+    );
+  }
+
+  function openVoiceReview(transcript) {
+    const textI = el('input', { class: 'fld-input', value: transcript });
+    const resultBox = el('div', { class: 'voice-result' });
+    let lastMatched = [];
+
+    function reparse() {
+      const { matched, unresolved } = parseVoiceOrder(textI.value, products);
+      lastMatched = matched;
+      resultBox.innerHTML = '';
+      if (matched.length === 0 && unresolved.length === 0) {
+        resultBox.appendChild(el('div', { class: 'empty-mini' }, 'Hech narsa aniqlanmadi'));
+      }
+      matched.forEach(m => resultBox.appendChild(el('div', { class: 'voice-row ok' }, `✅ ${m.qty} × ${m.product.name}`)));
+      unresolved.forEach(u => resultBox.appendChild(el('div', { class: 'voice-row bad' }, `❓ Tushunilmadi: "${u}"`)));
+    }
+    textI.addEventListener('input', reparse);
+
+    const modal = el('div', { class: 'modal scroll' }, [
+      el('h3', {}, '🎤 Ovozli buyurtma'),
+      el('label', { class: 'fld-label' }, 'Eshitilgan matn (xato bo\'lsa tuzatishingiz mumkin)'), textI,
+      el('div', { class: 'voice-results' }, [resultBox]),
+      el('div', { class: 'modal-actions' }, [
+        el('button', { class: 'btn-cancel', onClick: () => bg.remove() }, 'Bekor'),
+        el('button', { class: 'btn-confirm', onClick: () => {
+          if (lastMatched.length === 0) { toast('Qo\'shish uchun hech narsa yo\'q', 'error'); return; }
+          lastMatched.forEach(m => { for (let i = 0; i < m.qty; i++) add(m.product); });
+          bg.remove();
+          toast(`✅ Savatga ${lastMatched.length} xil taom qo'shildi`);
+        } }, '➕ Savatga qo\'shish'),
+      ]),
+    ]);
+    const bg = el('div', { class: 'modal-bg' }, modal);
+    document.body.appendChild(bg);
+    reparse();
   }
 
   renderCats(); renderGrid(); renderCart();
