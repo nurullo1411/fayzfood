@@ -52,17 +52,20 @@ export async function renderKassa(root) {
   }
   const voiceBtn = el('button', { class: 'voice-btn', onClick: startVoiceOrder }, '🎤 Ovozli buyurtma');
   const codeI = el('input', { class: 'fld-input mini', type: 'number', placeholder: 'Kod (masalan 11)' });
+  const codeQtyI = el('input', { class: 'fld-input mini code-qty', type: 'number', placeholder: 'Soni', value: '1' });
   const codeAddBtn = el('button', { class: 'code-add-btn', onClick: addByCode }, '➕');
-  codeI.addEventListener('keydown', (e) => { if (e.key === 'Enter') addByCode(); });
-  const codeRow = el('div', { class: 'code-row' }, [codeI, codeAddBtn]);
+  codeI.addEventListener('keydown', (e) => { if (e.key === 'Enter') codeQtyI.focus(); });
+  codeQtyI.addEventListener('keydown', (e) => { if (e.key === 'Enter') addByCode(); });
+  const codeRow = el('div', { class: 'code-row' }, [codeI, codeQtyI, codeAddBtn]);
   function addByCode() {
     const code = +codeI.value;
+    const qty = +codeQtyI.value || 1;
     if (!code) return;
     const p = products.find(x => x.code === code);
     if (!p) { toast('Bu kodda taom topilmadi', 'error'); return; }
-    add(p);
-    toast(`✅ #${code} ${p.name} qo'shildi`);
-    codeI.value = '';
+    for (let i = 0; i < qty; i++) add(p);
+    toast(`✅ ${qty} × #${code} ${p.name} qo'shildi`);
+    codeI.value = ''; codeQtyI.value = '1';
     codeI.focus();
   }
   menuPane.appendChild(voiceBtn);
